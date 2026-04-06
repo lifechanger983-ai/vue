@@ -14,7 +14,7 @@ const ProprietaireManagement = () => {
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showPassword, setShowPassword] = useState(false);  // ✅ SHOW/HIDE PASSWORD
+  const [showPassword, setShowPassword] = useState(false);
 
   const fetchProprietaires = async () => {
     setLoading(true);
@@ -50,25 +50,35 @@ const ProprietaireManagement = () => {
     setFormLoading(true);
 
     try {
-      console.log('📤 Submit - formData:', formData);
-      console.log('📤 files.photo:', files.photo ? files.photo.name : 'Aucun');
-
       const submitData = new FormData();
       
-      Object.keys(formData).forEach(key => {
-        if (key !== 'photo') {
-          submitData.append(key, formData[key]);
-        }
-      });
+      // Champs texte UNIQUEMENT
+      submitData.append('nom', formData.nom.trim());
+      submitData.append('sexe', formData.sexe);
+      submitData.append('telephone', formData.telephone.trim());
+      submitData.append('email', formData.email?.trim() || '');
+      submitData.append('quartier', formData.quartier?.trim() || '');
       
+      if (formData.password?.trim()) {
+        submitData.append('password', formData.password);
+      }
+      
+      // ✅ PHOTO : UNIQUEMENT le fichier, JAMAIS l'URL preview !
       if (files.photo) {
         submitData.append('photo', files.photo);
       }
 
+      console.log('📤 ENVOI FormData:', {
+        nom: formData.nom,
+        hasPhoto: !!files.photo,
+        photoName: files.photo?.name,
+        password: !!formData.password
+      });
+
+      // API call SANS Content-Type (axios + intercepteur gère)
       let response;
       if (editingId) {
         response = await api.put(`/admin/proprietaires/${editingId}`, submitData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
           onUploadProgress: (progressEvent) => {
             const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             setUploadProgress(percent);
@@ -76,7 +86,6 @@ const ProprietaireManagement = () => {
         });
       } else {
         response = await api.post('/admin/proprietaires', submitData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
           onUploadProgress: (progressEvent) => {
             const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             setUploadProgress(percent);
@@ -84,27 +93,20 @@ const ProprietaireManagement = () => {
         });
       }
 
-      console.log('✅ Backend Response:', response.status, response.data);
-
-      setTimeout(async () => {
-        await fetchProprietaires();
-      }, 1000);
-
+      // Reset + succès
+      await fetchProprietaires();
       setFormData({ nom: '', sexe: 'M', telephone: '', email: '', quartier: '', photo: '', password: '' });
       setFiles({ photo: null });
       setUploadProgress(0);
       setEditingId(null);
       setShowForm(false);
-      setShowPassword(false);
-      
       alert(editingId ? '✅ Propriétaire mis à jour !' : '🎉 Propriétaire créé !');
-      
+
     } catch (error) {
-      console.error('❌ Frontend Error FULL:', {
-        message: error.message,
+      console.error('❌ ERROR FULL:', {
         status: error.response?.status,
         data: error.response?.data,
-        config: error.config
+        message: error.message
       });
       alert(error.response?.data?.error || `Erreur: ${error.message}`);
     } finally {
@@ -181,6 +183,7 @@ const ProprietaireManagement = () => {
         </button>
       </div>
 
+      {/* FORMULAIRE COMPLET - ✅ FormData CORRIGÉ */}
       {showForm && (
         <div className="glass-card p-6">
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -211,7 +214,7 @@ const ProprietaireManagement = () => {
               disabled={formLoading}
             />
             
-            {/* ✅ PASSWORD AVEC SHOW/HIDE */}
+            {/* PASSWORD FIELD - OBLIGATOIRE POUR CRÉATION */}
             <div className="lg:col-span-2 relative">
               <input
                 type={showPassword ? "text" : "password"} 
@@ -231,7 +234,9 @@ const ProprietaireManagement = () => {
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
-              <p className="text-xs text-slate-500 mt-1">{editingId ? "Laisser vide pour garder ancien" : "Min 6 caractères"}</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {editingId ? "Laisser vide pour garder ancien" : "Min 6 caractères"}
+              </p>
             </div>
 
             <input
@@ -241,7 +246,7 @@ const ProprietaireManagement = () => {
               disabled={formLoading}
             />
 
-            {/* UPLOAD PHOTO */}
+            {/* UPLOAD PHOTO - ✅ CORRIGÉ: files.photo UNIQUEMENT */}
             <div className="lg:col-span-3">
               <label className="block text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
                 <Upload className="w-4 h-4" />
@@ -296,7 +301,7 @@ const ProprietaireManagement = () => {
 
             <button 
               type="submit" 
-              disabled={formLoading}
+              disabled={formLoading || !formData.nom.trim()}
               className="md:col-span-2 lg:col-span-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-slate-600 disabled:to-slate-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
             >
               {formLoading ? (
@@ -312,7 +317,7 @@ const ProprietaireManagement = () => {
         </div>
       )}
 
-      {/* TABLEAU IDENTIQUE */}
+      {/* TABLEAU */}
       <div className="glass-card overflow-hidden">
         <div className="p-4 border-b border-slate-800 flex gap-3">
           <div className="relative flex-1 max-w-md">
@@ -339,10 +344,10 @@ const ProprietaireManagement = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[1000px]">
               <thead className="bg-slate-900/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-300 w-12">Photo</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-300 w-16">Photo</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-300">Nom</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-300">Téléphone</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-300">Email</th>
@@ -356,14 +361,23 @@ const ProprietaireManagement = () => {
                 {filteredProprietaires.map(proprietaire => (
                   <tr key={proprietaire.id} className="border-t border-slate-800/30 hover:bg-slate-800/20">
                     <td className="px-4 py-4">
-                      {proprietaire.photo ? (
-                        <img src={proprietaire.photo} alt={proprietaire.nom} 
-                          className="w-10 h-10 rounded-full object-cover shadow-md" />
-                      ) : (
-                        <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center">
-                          <UserPlus className="w-5 h-5 text-slate-500" />
-                        </div>
-                      )}
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-800/50 flex items-center justify-center shadow-md">
+                        {proprietaire.photo ? (
+                          <img 
+                            src={proprietaire.photo} 
+                            alt={proprietaire.nom}
+                            className="w-full h-full object-cover rounded-full"
+                            onError={(e) => { 
+                              e.target.style.display = 'none'; 
+                              e.target.parentNode.innerHTML = (
+                                <UserPlus className="w-6 h-6 text-slate-500 mx-auto" />
+                              ); 
+                            }}
+                          />
+                        ) : (
+                          <UserPlus className="w-6 h-6 text-slate-500" />
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4 font-semibold">{proprietaire.nom}</td>
                     <td className="px-4 py-4 font-mono text-sm">{proprietaire.telephone}</td>

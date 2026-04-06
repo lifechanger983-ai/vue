@@ -5,3 +5,9 @@ export const applyTheme = (theme) => {
   root.style.setProperty('--boutique-primary', theme.primaire || '#10b981');
   root.style.setProperty('--boutique-secondary', theme.secondaire || '#0f172a');
 };
+
+// Hook pour détecter heure (bonjour/bonsoir)
+export const useGreeting = () => {
+  const hour = new Date().getHours();
+  return hour < 18 ? 'Bonjour' : 'Bonsoir';
+};

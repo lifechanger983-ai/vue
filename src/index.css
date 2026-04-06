@@ -21,3 +21,23 @@
     @apply bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl;
   }
 }
+
+/* AJOUTEZ en fin de fichier */
+:root {
+  --boutique-primary: #10b981;
+  --boutique-secondary: #0f172a;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
