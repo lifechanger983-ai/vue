@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useOutletContext, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, ZoomIn } from 'lucide-react';
 import api from '../../api/axiosConfig';
@@ -11,8 +11,113 @@ const ProduitsLongrichClient = () => {
   const [error, setError] = useState(null);
   const [activeCategorie, setActiveCategorie] = useState(null);
   
-  // ÉTAT MODAL ZOOM
-  const [imageModal, setImageModal] = useState({ open: false, src: '', alt: '' });
+  // ÉTAT MODAL ZOOM AVANCÉ
+  const [imageModal, setImageModal] = useState({ 
+    open: false, 
+    src: '', 
+    alt: '',
+    scale: 1,
+    rotation: 0,
+    positionX: 0,
+    positionY: 0
+  });
+
+  // ✅ HANDLER OUVERTURE MODAL - CRITIQUE
+  const openImageModal = useCallback((src, alt) => {
+    console.log('🖼️ Ouverture modal zoom:', src, alt); // DEBUG
+    setImageModal({ 
+      open: true, 
+      src, 
+      alt,
+      scale: 1,
+      rotation: 0, 
+      positionX: 0, 
+      positionY: 0 
+    });
+  }, []);
+
+  // ✅ GESTIONNAIRES ZOOM PRO - TOUS useCallback
+  const resetTransform = useCallback(() => {
+    setImageModal(prev => ({ 
+      ...prev, 
+      scale: 1, 
+      rotation: 0, 
+      positionX: 0, 
+      positionY: 0 
+    }));
+  }, []);
+
+  const zoomIn = useCallback(() => {
+    setImageModal(prev => ({ 
+      ...prev, 
+      scale: Math.min(prev.scale + 0.2, 3) 
+    }));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setImageModal(prev => ({ 
+      ...prev, 
+      scale: Math.max(prev.scale - 0.2, 0.5) 
+    }));
+  }, []);
+
+  const rotateLeft = useCallback(() => {
+    setImageModal(prev => ({ 
+      ...prev, 
+      rotation: prev.rotation - 90 
+    }));
+  }, []);
+
+  const rotateRight = useCallback(() => {
+    setImageModal(prev => ({ 
+      ...prev, 
+      rotation: prev.rotation + 90 
+    }));
+  }, []);
+
+  // ✅ TOUCHES CLAVIER - DÉPENDANCES CORRIGÉES
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!imageModal.open) return;
+      
+      console.log('⌨️ Touche:', e.key); // DEBUG
+      
+      switch(e.key) {
+        case 'Escape':
+          setImageModal({ open: false, src: '', alt: '', scale: 1, rotation: 0, positionX: 0, positionY: 0 });
+          break;
+        case '+':
+        case '=':
+          e.preventDefault();
+          zoomIn();
+          break;
+        case '-':
+          e.preventDefault();
+          zoomOut();
+          break;
+        case 'ArrowLeft':
+          setImageModal(prev => ({ ...prev, positionX: prev.positionX - 20 }));
+          break;
+        case 'ArrowRight':
+          setImageModal(prev => ({ ...prev, positionX: prev.positionX + 20 }));
+          break;
+        case 'ArrowUp':
+          setImageModal(prev => ({ ...prev, positionY: prev.positionY - 20 }));
+          break;
+        case 'ArrowDown':
+          setImageModal(prev => ({ ...prev, positionY: prev.positionY + 20 }));
+          break;
+      }
+    };
+
+    if (imageModal.open) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [imageModal.open, zoomIn, zoomOut]);
 
   useEffect(() => {
     const fetchProduitsLongrich = async () => {
@@ -52,18 +157,13 @@ const ProduitsLongrichClient = () => {
     }
   }, [urlBoutique, boutiqueConfig]);
 
-  const handleAddToCart = (produit) => {
+  const handleAddToCart = useCallback((produit) => {
     console.log('🛒 Ajout panier Longrich:', produit);
     const prixAffiche = produit.promoActive && produit.prixPromo > 0 
       ? produit.prixPromo 
       : produit.prixClient;
     alert(`✅ ${produit.nom} ajouté !\n💰 ${prixAffiche?.toLocaleString()} FCFA`);
-  };
-
-  // OUVERTURE MODAL ZOOM
-  const openImageModal = (src, alt) => {
-    setImageModal({ open: true, src, alt });
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -97,38 +197,123 @@ const ProduitsLongrichClient = () => {
 
   return (
     <div className="space-y-16">
-      {/* MODAL ZOOM INTERACTIF */}
+      {/* MODAL ZOOM INTERACTIF PRO - AFFICHÉE EN PREMIER */}
       {imageModal.open && (
         <div 
-          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setImageModal({ open: false, src: '', alt: '' })}
+          className="fixed inset-0 z-[9999] bg-black/98 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              console.log('❌ Fermeture modal'); // DEBUG
+              setImageModal({ open: false, src: '', alt: '', scale: 1, rotation: 0, positionX: 0, positionY: 0 });
+            }
+          }}
         >
-          <div className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center">
-            {/* Image zoomable */}
-            <img
-              src={imageModal.src}
-              alt={imageModal.alt}
-              className="max-w-full max-h-full object-contain cursor-zoom-in hover:scale-105 transition-transform duration-200"
-              draggable={false}
-            />
+          <div className="relative max-w-6xl max-h-[95vh] w-full h-full flex flex-col items-center justify-center">
             
-            {/* Bouton fermer */}
-            <button
-              className="absolute top-6 right-6 p-3 bg-white/90 hover:bg-white rounded-2xl shadow-2xl backdrop-blur-sm transition-all hover:scale-110 z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                setImageModal({ open: false, src: '', alt: '' });
-              }}
-            >
-              <ChevronLeft className="w-6 h-6 rotate-180 text-slate-900" />
-            </button>
-            
-            {/* Notice */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-2xl text-center max-w-md mx-4">
-              <ZoomIn className="w-5 h-5 text-[var(--boutique-primary)] inline ml-2 mb-1" />
-              <p className="text-sm font-semibold text-slate-800">
-                👆 Cliquez sur l'image ou appuyez sur Échap pour fermer
-              </p>
+            {/* CONTENU PRINCIPAL IMAGE */}
+            <div className="relative flex-1 w-full h-full flex items-center justify-center overflow-hidden rounded-3xl">
+              <div 
+                className="flex items-center justify-center cursor-grab active:cursor-grabbing max-w-full max-h-full touch-pan-x touch-pan-y"
+                style={{
+                  transform: `scale(${imageModal.scale}) rotate(${imageModal.rotation}deg) translate(${imageModal.positionX}px, ${imageModal.positionY}px)`
+                }}
+                draggable={false}
+              >
+                <img
+                  src={imageModal.src}
+                  alt={imageModal.alt}
+                  className="max-w-full max-h-full object-contain shadow-2xl rounded-2xl select-none"
+                  draggable={false}
+                />
+              </div>
+
+              {/* OVERLAY ACTIONS */}
+              <div className="absolute top-6 left-6 right-6 flex gap-3 justify-between z-30">
+                {/* BOUTONS GAUCHE - ZOOM */}
+                <div className="flex gap-2 bg-white/95 backdrop-blur-xl p-3 rounded-3xl shadow-2xl border border-white/50">
+                  <button
+                    onClick={zoomIn}
+                    className="p-2 hover:bg-emerald-100 rounded-2xl transition-all hover:scale-110 active:scale-95"
+                    title="Zoom avant (+)"
+                  >
+                    <ZoomIn className="w-5 h-5 text-emerald-600" />
+                  </button>
+                  <button
+                    onClick={zoomOut}
+                    className="p-2 hover:bg-orange-100 rounded-2xl transition-all hover:scale-110 active:scale-95"
+                    title="Zoom arrière (-)"
+                  >
+                    <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"/>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={resetTransform}
+                    className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-xs font-bold rounded-2xl transition-all hover:scale-105 active:scale-95"
+                    title="Réinitialiser (R)"
+                  >
+                    ↺
+                  </button>
+                </div>
+
+                {/* BOUTONS DROITE - ROTATION */}
+                <div className="flex gap-2 bg-white/95 backdrop-blur-xl p-3 rounded-3xl shadow-2xl border border-white/50">
+                  <button
+                    onClick={rotateLeft}
+                    className="p-2 hover:bg-blue-100 rounded-2xl transition-all hover:scale-110 active:scale-95"
+                    title="Rotation gauche (Q)"
+                  >
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 6l-5.5 5.5 5.5 5.5"/>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={rotateRight}
+                    className="p-2 hover:bg-blue-100 rounded-2xl transition-all hover:scale-110 active:scale-95"
+                    title="Rotation droite (E)"
+                  >
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 18l5.5-5.5-5.5-5.5"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* BOUTON FERMER */}
+              <button
+                className="absolute top-6 right-6 p-3 bg-white/95 hover:bg-white/100 rounded-3xl shadow-2xl backdrop-blur-xl transition-all hover:scale-110 active:scale-95 z-40 border border-white/50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('❌ Fermer modal'); // DEBUG
+                  setImageModal({ open: false, src: '', alt: '', scale: 1, rotation: 0, positionX: 0, positionY: 0 });
+                }}
+              >
+                <svg className="w-6 h-6 text-slate-800" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* BARRE INFO INFÉRIEURE */}
+            <div className="w-full p-4 bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl mt-6 border border-white/50">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="font-mono bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-xs font-bold">
+                    Zoom: {Math.round(imageModal.scale * 100)}%
+                  </span>
+                  <span className="font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-bold">
+                    Rotation: {imageModal.rotation}°
+                  </span>
+                  <div className="flex gap-2 text-xs text-slate-600 font-medium">
+                    <kbd className="bg-slate-200 px-1.5 py-0.5 rounded">←→↑↓</kbd> Déplacer
+                    <kbd className="bg-slate-200 px-1.5 py-0.5 rounded">+/-</kbd> Zoom
+                    <kbd className="bg-slate-200 px-1.5 py-0.5 rounded">Esc</kbd> Fermer
+                  </div>
+                </div>
+                <div className="text-slate-800 font-semibold max-w-md truncate bg-slate-100 px-3 py-1 rounded-full text-sm">
+                  {imageModal.alt}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -147,7 +332,7 @@ const ProduitsLongrichClient = () => {
             {Object.values(produitsParCategorie).flat().length} produits
           </p>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-            Prix client • Promotions actives • <span className="font-semibold text-[var(--boutique-primary)]">Cliquez sur les images pour zoomer</span>
+            Prix client • Promotions actives • <span className="font-bold text-[var(--boutique-primary)] text-lg">👆 Cliquez images = ZOOM PRO</span>
           </p>
         </div>
       </div>
@@ -172,7 +357,7 @@ const ProduitsLongrichClient = () => {
         ))}
       </nav>
 
-      {/* Grille Active - NOUVEAU DESIGN E-COMMERCE PREMIUM */}
+      {/* Grille Active - CLIC SUR IMAGE CORRIGÉ */}
       {activeCategorie && (
         <section className="space-y-8">
           <div className="flex items-center justify-between">
@@ -187,80 +372,101 @@ const ProduitsLongrichClient = () => {
             </span>
           </div>
           
-          {/* NOTICE ZOOM */}
-          <div className="bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-6 text-center max-w-2xl mx-auto">
-            <ZoomIn className="w-8 h-8 text-blue-500 mx-auto mb-3" />
-            <p className="text-lg font-semibold text-slate-200">
-              👆 <span className="text-blue-400">Cliquez sur chaque image</span> pour l'agrandir et examiner tous les détails
+          {/* NOTICE ZOOM PRO */}
+          <div className="bg-gradient-to-r from-blue-500/15 to-emerald-500/15 border border-blue-500/30 backdrop-blur-sm rounded-3xl p-6 text-center max-w-3xl mx-auto shadow-2xl">
+            <ZoomIn className="w-10 h-10 text-blue-500 mx-auto mb-4 animate-pulse drop-shadow-lg" />
+            <p className="text-xl font-bold text-slate-100 mb-2">
+              🔍 <span className="text-blue-400">ZOOM PRO ACTIVÉ</span>
             </p>
+            <p className="text-lg font-semibold text-slate-200">
+              Cliquez sur **chaque image** pour l'agrandir en haute qualité avec zoom, rotation et déplacement
+            </p>
+            <p className="text-sm text-blue-300 mt-2 font-medium">Flèches + molette souris + clavier = contrôle total</p>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
             {produitsParCategorie[activeCategorie].map((produit) => (
               <div
                 key={produit.id}
-                className="group relative bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border border-slate-100 hover:border-[var(--boutique-primary)]/30 overflow-hidden hover:scale-[1.02]"
+                className="group relative bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-2xl hover:shadow-3xl hover:-translate-y-3 transition-all duration-500 border-2 border-white/50 hover:border-[var(--boutique-primary)]/40 overflow-hidden hover:scale-[1.03] cursor-pointer"
               >
                 {/* ÉTIQUETTE PROMO */}
                 {produit.promoActive && produit.prixPromo > 0 && (
                   <div className="absolute top-4 left-4 z-20">
-                    <span className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg transform rotate-[-8deg] -translate-x-1 -translate-y-1">
+                    <span className="bg-gradient-to-br from-red-500 to-pink-600 text-white text-xs font-black px-4 py-2 rounded-full shadow-2xl transform rotate-[-10deg] -translate-x-2 -translate-y-2 border-2 border-white/50">
                       🔥 PROMO
                     </span>
                   </div>
                 )}
 
-                {/* IMAGE PRINCIPALE - AFFICHAGE COMPLET + ZOOM */}
-                <div className="relative mb-6 h-64 w-full overflow-hidden rounded-2xl group-hover:rounded-3xl transition-all duration-300 bg-gradient-to-br from-slate-50 to-slate-100 border-4 border-white/50 shadow-2xl">
+                {/* ✅ IMAGE PRINCIPALE - CLIC GARANTI */}
+                <div 
+                  className="relative mb-6 h-64 w-full overflow-hidden rounded-3xl group-hover:rounded-[1.5rem] transition-all duration-500 bg-gradient-to-br from-slate-50/80 to-white/80 border-4 border-white shadow-3xl cursor-zoom-in hover:cursor-zoom-in hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)]"
+                  onClick={() => openImageModal(produit.photo, produit.nom)} // ✅ CLIC DIRECT ICI
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openImageModal(produit.photo, produit.nom);
+                    }
+                  }}
+                >
                   <img
                     src={produit.photo}
                     alt={produit.nom}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 cursor-zoom-in hover:brightness-110 hover:shadow-2xl"
-                    onClick={() => openImageModal(produit.photo, produit.nom)}
+                    className="w-full h-full object-cover group-hover:scale-115 transition-transform duration-700 hover:brightness-105 hover:contrast-110 select-none pointer-events-none"
                     draggable={false}
                     onError={(e) => {
                       e.target.src = '/placeholder-product.jpg';
                     }}
                   />
                   
-                  {/* Icône zoom */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                    <div className="bg-white/90 backdrop-blur-sm p-3 rounded-2xl shadow-2xl hover:bg-white hover:scale-110 transition-all duration-200">
-                      <ZoomIn className="w-7 h-7 text-[var(--boutique-primary)]" />
+                  {/* Icône zoom PRO - SUR L'IMAGE */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-400 flex items-center justify-center backdrop-blur-sm">
+                    <div className="bg-white/98 backdrop-blur-2xl p-5 rounded-3xl shadow-3xl hover:bg-white hover:scale-110 transition-all duration-300 border-2 border-white/60 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+                      <ZoomIn className="w-10 h-10 text-[var(--boutique-primary)] drop-shadow-2xl mb-2" />
+                      <div className="text-xs font-black text-slate-800 uppercase tracking-wider text-center">
+                        ZOOM PRO
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-medium mt-1">Cliquez !</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Infos produit */}
-                <div className="space-y-3">
-                  <h4 className="font-bold text-xl text-slate-900 leading-tight line-clamp-2 group-hover:text-[var(--boutique-primary)] transition-colors">
+                <div className="space-y-3 pt-2">
+                  <h4 className="font-black text-xl text-slate-900 leading-tight line-clamp-2 group-hover:text-[var(--boutique-primary)] transition-all duration-300 text-center">
                     {produit.nom}
                   </h4>
                   
                   {/* Prix avec promo */}
-                  <div className="flex items-center gap-3 pt-2">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 justify-center">
                     {produit.promoActive && produit.prixPromo > 0 ? (
                       <>
-                        <span className="text-2xl font-black text-emerald-600">
-                          {produit.prixPromo?.toLocaleString()} FCFA
+                        <span className="text-2xl font-black text-emerald-600 drop-shadow-lg">
+                          {produit.prixPromo?.toLocaleString()} <span className="text-sm">FCFA</span>
                         </span>
-                        <span className="text-lg text-slate-500 line-through font-medium">
+                        <span className="text-lg text-slate-500 line-through font-medium text-sm">
                           {produit.prixClient?.toLocaleString()} FCFA
                         </span>
                       </>
                     ) : (
-                      <span className="text-2xl font-black text-[var(--boutique-primary)]">
-                        {produit.prixClient?.toLocaleString()} FCFA
+                      <span className="text-2xl font-black text-[var(--boutique-primary)] drop-shadow-lg">
+                        {produit.prixClient?.toLocaleString()} <span className="text-sm">FCFA</span>
                       </span>
                     )}
                   </div>
 
                   {/* Bouton ajouter au panier */}
                   <button
-                    onClick={() => handleAddToCart(produit)}
-                    className="w-full bg-gradient-to-r from-[var(--boutique-primary)] to-emerald-500 hover:from-[var(--boutique-primary)] hover:to-emerald-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 uppercase tracking-wide text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation(); // ✅ EMPÊCHE MODAL
+                      handleAddToCart(produit);
+                    }}
+                    className="w-full bg-gradient-to-r from-[var(--boutique-primary)] to-emerald-500 hover:from-[var(--boutique-primary)]/90 hover:to-emerald-600 text-white font-black py-4 px-6 rounded-3xl shadow-2xl hover:shadow-3xl hover:scale-105 active:scale-95 transition-all duration-300 uppercase tracking-wider text-sm border border-transparent hover:border-white/20"
                   >
-                    Ajouter au panier
+                    🛒 Ajouter au panier
                   </button>
                 </div>
               </div>

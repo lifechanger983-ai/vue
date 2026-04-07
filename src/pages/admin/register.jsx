@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import api from '../../api/axiosConfig';
 
+
+
 const Register = () => {
   const [formData, setFormData] = useState({
     nom: '',
@@ -148,3 +150,5 @@ const Register = () => {
 };
 
 export default Register;
+
+//register qui fonctione depuis le debut de ce projet

@@ -10,11 +10,12 @@ import BoutiquesManagement from './components/admin/BoutiquesManagement';
 import ServicesManagement from './components/admin/ServicesManagement';
 import PackSanteManagement from './components/admin/PackSanteManagement';
 
-// ✅ VAGUE 5 - CLIENTS (IMPORTS CORRIGÉS)
+// ✅ VAGUE 5 - CLIENTS
 import BoutiqueLayout from './pages/clients/BoutiqueLayout';
 import Accueil from './pages/clients/Accueil';
-import ProduitsLongrichClient from './pages/clients/ProduitsLongrichClient';  // ✅ Renommé
+import ProduitsLongrichClient from './pages/clients/ProduitsLongrichClient';
 import BoutiqueServices from './pages/clients/BoutiqueServices';
+import DebutPage from './pages/clients/DebutPage';  // ✅ NOUVEAU IMPORT
 
 function AppContent() {
   const location = useLocation();
@@ -22,7 +23,11 @@ function AppContent() {
   return (
     <AdminAuthProvider>
       <Routes>
-        {/* ✅ ROUTES CLIENTS VAGUE 5 */}
+        {/* ✅ PAGE D'ACCUEIL PRINCIPALE */}
+        <Route path="/" element={<DebutPage />} />
+        <Route path="/debut" element={<DebutPage />} />
+
+        {/* ✅ ROUTES CLIENTS BOUTIQUES */}
         <Route path="/boutique/:urlBoutique" element={<BoutiqueLayout />}>
           <Route index element={<Accueil />} />
           <Route path="services" element={<BoutiqueServices />} />
@@ -32,7 +37,7 @@ function AppContent() {
           <Route path="autres-produits" element={<div>Autres Produits bientôt</div>} />
         </Route>
 
-        {/* Admin routes - INCHANGÉ */}
+        {/* ✅ ROUTES ADMIN (protégées) */}
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin/register" element={<Register />} />
         <Route path="/admin" element={<DashboardLayout />}>
@@ -46,15 +51,20 @@ function AppContent() {
           <Route path="dashboard" element={<div>Dashboard bientôt</div>} />
         </Route>
 
-        <Route path="/" element={<Navigate to="/admin/login" replace />} />
+        {/* 404 */}
         <Route path="*" element={
           <div className="min-h-screen bg-slate-950 flex items-center justify-center p-8">
             <div className="text-center max-w-md">
               <h1 className="text-6xl font-black text-slate-600 mb-4">404</h1>
               <p className="text-xl text-slate-500 mb-8">Page introuvable</p>
-              <a href="/admin/login" className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-xl text-white font-semibold transition-all">
-                ← Retour Login
-              </a>
+              <div className="space-y-2">
+                <a href="/" className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-xl text-white font-semibold transition-all">
+                  ← Page d'accueil
+                </a>
+                <a href="/admin/login" className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 px-6 py-3 rounded-xl text-white font-semibold transition-all">
+                  Admin →
+                </a>
+              </div>
             </div>
           </div>
         } />
