@@ -37,7 +37,10 @@ const BoutiquesManagement = () => {
     e.preventDefault();
     try {
       await api.post('/admin/boutiques', formData);
-      setFormData({ nom: '', type: 'boutique', urlPersonnalisee: '', proprietaireId: '', activeProduitsLongrich: false, activeSante: false, activeAutresProduits: false });
+      setFormData({ 
+        nom: '', type: 'boutique', urlPersonnalisee: '', proprietaireId: '', 
+        activeProduitsLongrich: false, activeSante: false, activeAutresProduits: false 
+      });
       setShowForm(false);
       fetchData();
     } catch (error) {
@@ -51,6 +54,18 @@ const BoutiquesManagement = () => {
       fetchData();
     } catch (error) {
       alert('Erreur statut');
+    }
+  };
+
+  // ✅ FONCTION SUPPRESSION AJOUTÉE
+  const deleteBoutique = async (id) => {
+    if (!confirm('⚠️ Supprimer définitivement cette boutique ?')) return;
+    
+    try {
+      await api.delete(`/admin/boutiques/${id}`);
+      fetchData();  // Recharge la liste
+    } catch (error) {
+      alert(error.response?.data?.error || 'Erreur suppression');
     }
   };
 
@@ -77,16 +92,39 @@ const BoutiquesManagement = () => {
       {showForm && (
         <div className="glass-card p-6">
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <input type="text" placeholder="Nom boutique" value={formData.nom} onChange={e => setFormData({...formData, nom: e.target.value})} className="p-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white" required />
+            <input 
+              type="text" 
+              placeholder="Nom boutique" 
+              value={formData.nom} 
+              onChange={e => setFormData({...formData, nom: e.target.value})}
+              className="p-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white" 
+              required 
+            />
             
-            <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="p-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white">
+            <select 
+              value={formData.type} 
+              onChange={e => setFormData({...formData, type: e.target.value})} 
+              className="p-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white"
+            >
               <option value="boutique">Boutique</option>
               <option value="supermarche">Supermarché</option>
             </select>
 
-            <input type="text" placeholder="URL personnalisée (mega123)" value={formData.urlPersonnalisee} onChange={e => setFormData({...formData, urlPersonnalisee: e.target.value.toLowerCase().replace(/\s+/g, '')})} className="p-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white" required />
+            <input 
+              type="text" 
+              placeholder="URL personnalisée (mega123)" 
+              value={formData.urlPersonnalisee} 
+              onChange={e => setFormData({...formData, urlPersonnalisee: e.target.value.toLowerCase().replace(/\s+/g, '')})}
+              className="p-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white" 
+              required 
+            />
 
-            <select value={formData.proprietaireId} onChange={e => setFormData({...formData, proprietaireId: e.target.value})} className="p-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white" required>
+            <select 
+              value={formData.proprietaireId} 
+              onChange={e => setFormData({...formData, proprietaireId: e.target.value})} 
+              className="p-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white" 
+              required
+            >
               <option value="">Sélectionner propriétaire</option>
               {proprietaires.map(p => (
                 <option key={p.id} value={p.id}>{p.nom} ({p.telephone})</option>
@@ -95,20 +133,38 @@ const BoutiquesManagement = () => {
 
             <div className="md:col-span-2 lg:col-span-3 grid grid-cols-3 gap-3 mt-2">
               <label className="flex items-center gap-2 p-3 bg-slate-800/50 border border-slate-600 rounded-xl cursor-pointer">
-                <input type="checkbox" checked={formData.activeProduitsLongrich} onChange={e => setFormData({...formData, activeProduitsLongrich: e.target.checked})} className="w-4 h-4 text-emerald-500" />
+                <input 
+                  type="checkbox" 
+                  checked={formData.activeProduitsLongrich} 
+                  onChange={e => setFormData({...formData, activeProduitsLongrich: e.target.checked})} 
+                  className="w-4 h-4 text-emerald-500" 
+                />
                 <span className="text-sm text-emerald-400 font-bold">Longrich</span>
               </label>
               <label className="flex items-center gap-2 p-3 bg-slate-800/50 border border-slate-600 rounded-xl cursor-pointer">
-                <input type="checkbox" checked={formData.activeSante} onChange={e => setFormData({...formData, activeSante: e.target.checked})} className="w-4 h-4 text-blue-500" />
+                <input 
+                  type="checkbox" 
+                  checked={formData.activeSante} 
+                  onChange={e => setFormData({...formData, activeSante: e.target.checked})} 
+                  className="w-4 h-4 text-blue-500" 
+                />
                 <span className="text-sm text-blue-400 font-bold">Santé</span>
               </label>
               <label className="flex items-center gap-2 p-3 bg-slate-800/50 border border-slate-600 rounded-xl cursor-pointer">
-                <input type="checkbox" checked={formData.activeAutresProduits} onChange={e => setFormData({...formData, activeAutresProduits: e.target.checked})} className="w-4 h-4 text-purple-500" />
+                <input 
+                  type="checkbox" 
+                  checked={formData.activeAutresProduits} 
+                  onChange={e => setFormData({...formData, activeAutresProduits: e.target.checked})} 
+                  className="w-4 h-4 text-purple-500" 
+                />
                 <span className="text-sm text-purple-400 font-bold">Autres</span>
               </label>
             </div>
 
-            <button type="submit" className="md:col-span-2 lg:col-span-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3 px-6 rounded-xl">
+            <button 
+              type="submit" 
+              className="md:col-span-2 lg:col-span-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3 px-6 rounded-xl"
+            >
               Créer Boutique
             </button>
           </form>
@@ -119,12 +175,20 @@ const BoutiquesManagement = () => {
         <div className="p-4 border-b border-slate-800 flex gap-3">
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder="Rechercher nom ou URL..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-600 rounded-xl text-white" />
+            <input 
+              type="text" 
+              placeholder="Rechercher nom ou URL..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+              className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-600 rounded-xl text-white" 
+            />
           </div>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center"><div className="animate-spin h-12 w-12 border-4 border-orange-500/20 border-t-orange-500 mx-auto" /></div>
+          <div className="p-12 text-center">
+            <div className="animate-spin h-12 w-12 border-4 border-orange-500/20 border-t-orange-500 mx-auto" />
+          </div>
         ) : filteredBoutiques.length === 0 ? (
           <div className="text-center py-12">
             <Store className="w-16 h-16 text-slate-600 mx-auto mb-4" />
@@ -184,10 +248,18 @@ const BoutiquesManagement = () => {
                     </td>
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        <button onClick={() => toggleActive(boutique.id)} className={`p-2 rounded-lg ${boutique.isActive ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'}`}>
+                        <button 
+                          onClick={() => toggleActive(boutique.id)} 
+                          className={`p-2 rounded-lg ${boutique.isActive ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'}`}
+                        >
                           <ToggleRight className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-slate-400 hover:bg-slate-800/50 rounded-lg">
+                        {/* ✅ BOUTON SUPPRESSION CORRIGÉ */}
+                        <button 
+                          onClick={() => deleteBoutique(boutique.id)}
+                          className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-all"
+                          title="Supprimer boutique"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

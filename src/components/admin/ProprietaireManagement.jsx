@@ -45,74 +45,96 @@ const ProprietaireManagement = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setFormLoading(true);
 
-    try {
-      const submitData = new FormData();
-      
-      // Champs texte UNIQUEMENT
-      submitData.append('nom', formData.nom.trim());
-      submitData.append('sexe', formData.sexe);
-      submitData.append('telephone', formData.telephone.trim());
-      submitData.append('email', formData.email?.trim() || '');
-      submitData.append('quartier', formData.quartier?.trim() || '');
-      
-      if (formData.password?.trim()) {
-        submitData.append('password', formData.password);
+  try {
+    const submitData = new FormData();
+    
+    // ✅ FORM DATA ROBUSTE - Gère TOUS les types (string/null/undefined)
+    Object.keys(formData).forEach(key => {
+      if (key !== 'photo') {  // ← Exclut photo (fichier séparé)
+        const value = formData[key];
+        // ✅ SAFE TRIM: Seulement si string
+        if (typeof value === 'string') {
+          submitData.append(key, value.trim());
+        } else {
+          submitData.append(key, value || '');  // boolean/null → string
+        }
       }
-      
-      // ✅ PHOTO : UNIQUEMENT le fichier, JAMAIS l'URL preview !
-      if (files.photo) {
-        submitData.append('photo', files.photo);
-      }
+    });
+    
+    // ✅ PHOTO : UNIQUEMENT le fichier, JAMAIS l'URL preview !
+    if (files.photo) {
+      submitData.append('photo', files.photo);
+    }
 
-      console.log('📤 ENVOI FormData:', {
-        nom: formData.nom,
-        hasPhoto: !!files.photo,
-        photoName: files.photo?.name,
-        password: !!formData.password
+    console.log('📤 ENVOI FormData:', {
+      nom: formData.nom,
+      email: formData.email,  // ✅ MAINTENANT visible !
+      hasPhoto: !!files.photo,
+      photoName: files.photo?.name,
+      password: !!formData.password
+    });
+
+    // API call SANS Content-Type (axios + intercepteur gère)
+    let response;
+    if (editingId) {
+      response = await api.put(`/admin/proprietaires/${editingId}`, submitData, {
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percent);
+        }
       });
+    } else {
+      response = await api.post('/admin/proprietaires', submitData, {
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percent);
+        }
+      });
+    }
 
-      // API call SANS Content-Type (axios + intercepteur gère)
-      let response;
-      if (editingId) {
-        response = await api.put(`/admin/proprietaires/${editingId}`, submitData, {
-          onUploadProgress: (progressEvent) => {
-            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(percent);
-          }
-        });
-      } else {
-        response = await api.post('/admin/proprietaires', submitData, {
-          onUploadProgress: (progressEvent) => {
-            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(percent);
-          }
-        });
-      }
+    // Reset + succès (UPDATE uniquement)
+    await fetchProprietaires();
+    setFormData({ nom: '', sexe: 'M', telephone: '', email: '', quartier: '', photo: '', password: '' });
+    setFiles({ photo: null });
+    setUploadProgress(0);
+    setEditingId(null);
+    setShowForm(false);
+    alert(editingId ? '✅ Propriétaire mis à jour !' : '🎉 Propriétaire créé !');
 
-      // Reset + succès
+  } catch (error) {
+    console.error('❌ ERROR FULL:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    
+    // ✅ ALERTE DÉTAILLÉE pour nouveau propriétaire (201 = SUCCÈS !)
+    if (error.response?.status === 201) {
+      const data = error.response.data;
+      alert(`✅ PROPRIÉTAIRE CRÉÉ: ${data.nom}\n📧 Email envoyé à: ${data.email || 'AUCUN'}\nℹ️ AUCUNE BOUTIQUE associée\n👉 Allez dans "Gestion Boutiques" pour le lier`);
+      
+      // ✅ AUTO-RELOAD + reset (car c'est un SUCCÈS !)
       await fetchProprietaires();
       setFormData({ nom: '', sexe: 'M', telephone: '', email: '', quartier: '', photo: '', password: '' });
       setFiles({ photo: null });
       setUploadProgress(0);
       setEditingId(null);
       setShowForm(false);
-      alert(editingId ? '✅ Propriétaire mis à jour !' : '🎉 Propriétaire créé !');
-
-    } catch (error) {
-      console.error('❌ ERROR FULL:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-      alert(error.response?.data?.error || `Erreur: ${error.message}`);
-    } finally {
-      setFormLoading(false);
+      
+    } else {
+      // Erreurs réelles (400, 500, etc.)
+      alert(error.response?.data?.error || `❌ Erreur: ${error.message}`);
     }
-  };
+  } finally {
+    setFormLoading(false);
+  }
+};
+
+
 
   const handleEdit = (proprietaire) => {
     setFormData({
