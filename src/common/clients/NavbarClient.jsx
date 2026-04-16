@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, LogOut, ShoppingCart, Palette } from 'lucide-react';
+import { Settings, LogOut, ShoppingCart, Palette, MessageCircle } from 'lucide-react';
 import { useGreeting, applyTheme } from '../../utils/themeEngine';
 
 const NavbarClient = ({ 
@@ -17,6 +17,7 @@ const NavbarClient = ({
   const [customSecondary, setCustomSecondary] = useState('#0f172a');
 
   const prefix = clientInfo?.sexe === 'F' ? 'Mme' : 'M';
+  const whatsappUrl = import.meta.env.VITE_WHATSAPP_GROUPE || 'https://chat.whatsapp.com/Fsf4HQAsq0W5E6JxdvwedW?mode=gi_t';
 
   // Thèmes prédéfinis
   const themesPreset = [
@@ -63,7 +64,7 @@ const NavbarClient = ({
   return (
     <>
       <header className="w-full border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-0">
           {/* Logo Boutique */}
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-[var(--boutique-primary)] flex items-center justify-center text-white font-bold text-lg shadow-lg">
@@ -75,8 +76,18 @@ const NavbarClient = ({
             </div>
           </div>
 
-          {/* Salutation Client + Actions */}
-          <div className="flex items-center gap-4">
+          {/* ✅ NOTICE SERVICE CLIENT (Mobile + Desktop) */}
+          <div className="w-full lg:w-auto">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-2xl px-3 py-2 backdrop-blur-sm shadow-lg mx-auto lg:mx-0 text-center lg:text-left">
+              <MessageCircle className="w-4 h-4 text-green-400 flex-shrink-0 animate-pulse lg:w-5 lg:h-5" />
+              <p className="text-xs text-green-100 font-medium leading-tight">
+                📱 <span className="font-bold">Service Client 24/7</span> : Groupe WhatsApp suivi commande & support
+              </p>
+            </div>
+          </div>
+
+          {/* Actions Client */}
+          <div className="flex items-center gap-2 md:gap-4">
             {clientInfo && (
               <div className="text-right hidden md:block">
                 <p className="text-slate-200 font-semibold text-sm">
@@ -86,6 +97,21 @@ const NavbarClient = ({
               </div>
             )}
             
+            {/* ✅ WHATSAPP SERVICE CLIENT */}
+            <a 
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all hover:scale-110 hover:rotate-3 group relative z-10"
+              title="Service Client WhatsApp - Suivi commande & support instantané"
+            >
+              <MessageCircle className="w-5 h-5 group-hover:animate-bounce" />
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-sm text-white text-xs px-3 py-2 rounded-2xl opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all whitespace-nowrap shadow-2xl border border-green-500/30 z-50 pointer-events-none before:absolute before:-bottom-1 before:left-1/2 before:-translate-x-1/2 before:rotate-45 before:w-2 before:h-2 before:bg-slate-900/95">
+                💬 Support 24/7
+              </div>
+            </a>
+
+            {/* Thème */}
             <button 
               onClick={() => setShowThemeModal(true)}
               className="p-2 text-slate-400 hover:text-[var(--boutique-primary)] hover:bg-slate-800/50 rounded-xl transition-all relative group"
@@ -97,6 +123,7 @@ const NavbarClient = ({
               </span>
             </button>
 
+            {/* Déconnexion */}
             <button 
               onClick={onLogout}
               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all flex items-center gap-1"
@@ -105,6 +132,7 @@ const NavbarClient = ({
               <LogOut className="w-5 h-5" />
             </button>
 
+            {/* Panier */}
             <button className="p-3 bg-slate-800/50 hover:bg-slate-700 rounded-2xl text-slate-300 transition-all relative group">
               <ShoppingCart className="w-5 h-5" />
               <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-xs rounded-full flex items-center justify-center text-white font-bold shadow-lg">

@@ -20,7 +20,7 @@
     "framer-motion": "^12.38.0",
     "html2canvas": "^1.4.1",
     "iblis-react-undraw": "^0.3.0",
-    "jspdf": "^4.2.0",
+    "jspdf": "^4.2.1",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.575.0",
@@ -29,6 +29,7 @@
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
     "react-leaflet": "^5.0.0",
+    "react-pdf": "^10.4.1",
     "react-router-dom": "^7.13.1",
     "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.20"

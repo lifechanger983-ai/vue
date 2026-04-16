@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';  // ✅ useEffect ajouté
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { ArrowRight, User, UserPlus } from 'lucide-react';
@@ -10,6 +10,14 @@ const Accueil = () => {
   const [formData, setFormData] = useState({ nom: '', sexe: 'M' });
   const [loading, setLoading] = useState(false);
 
+  // ✅ CORRECTION CRITIQUE : Redirection dans useEffect (ligne ~30)
+  useEffect(() => {
+    if (clientInfo?.urlBoutique === urlBoutique) {
+      console.log('🔄 Redirection auto vers services (client connecté)');
+      navigate(`/boutique/${urlBoutique}/services`, { replace: true });
+    }
+  }, [clientInfo, urlBoutique, navigate]);  // ✅ Dépendances complètes
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.nom.trim()) return;
@@ -20,17 +28,14 @@ const Accueil = () => {
     
     // Redirection vers SERVICES (page principale)
     setTimeout(() => {
-      navigate(`/boutique/${urlBoutique}/services`);  // ✅ CORRIGÉ
+      console.log('✅ Client enregistré, redirection services');
+      navigate(`/boutique/${urlBoutique}/services`, { replace: true });
       setLoading(false);
     }, 1500);
   };
 
-  // Redirection si déjà connecté
-  if (clientInfo?.urlBoutique === urlBoutique) {
-    navigate(`/boutique/${urlBoutique}/services`);
-    return null;
-  };
-
+  // ✅ SUPPRIMÉ : if (clientInfo...) navigate() direct causait l'erreur BrowserRouter
+  // Le useEffect gère maintenant cette logique
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900/50 to-slate-950 flex items-center justify-center p-4 relative overflow-hidden">

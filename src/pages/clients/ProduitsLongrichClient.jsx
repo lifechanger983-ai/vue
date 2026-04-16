@@ -3,14 +3,19 @@ import { useOutletContext, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, ZoomIn } from 'lucide-react';
 import api from '../../api/axiosConfig';
 
+import { useCart } from '../../pages/clients/CartContext'; // AJOUTER EN HAUT
+
 const ProduitsLongrichClient = () => {
   const { urlBoutique } = useParams();
   const { boutiqueConfig } = useOutletContext();
+  // Dans le composant :
+const { dispatch } = useCart();
   const [produitsParCategorie, setProduitsParCategorie] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategorie, setActiveCategorie] = useState(null);
   
+
   // ÉTAT MODAL ZOOM AVANCÉ
   const [imageModal, setImageModal] = useState({ 
     open: false, 
@@ -157,13 +162,39 @@ const ProduitsLongrichClient = () => {
     }
   }, [urlBoutique, boutiqueConfig]);
 
-  const handleAddToCart = useCallback((produit) => {
-    console.log('🛒 Ajout panier Longrich:', produit);
-    const prixAffiche = produit.promoActive && produit.prixPromo > 0 
-      ? produit.prixPromo 
-      : produit.prixClient;
-    alert(`✅ ${produit.nom} ajouté !\n💰 ${prixAffiche?.toLocaleString()} FCFA`);
-  }, []);
+const handleAddToCart = useCallback((produit) => {
+  console.log('🛒 Ajout panier Longrich:', produit);
+  
+  // ✅ AJOUT AU CONTEXTE
+  dispatch({ 
+    type: 'ADD_ITEM', 
+    payload: produit 
+  });
+  
+  // Prix affiché
+  const prixAffiche = produit.promoActive && produit.prixPromo > 0 
+    ? produit.prixPromo 
+    : produit.prixClient;
+    
+  // Notification améliorée
+  const notification = document.createElement('div');
+  notification.innerHTML = `
+    <div class="fixed top-6 right-6 z-[10002] bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-sm border border-emerald-400/50 animate-in slide-in-from-right-4 fade-in duration-300 max-w-sm">
+      <div class="flex items-center gap-3">
+        <div class="w-3 h-12 bg-white/30 rounded-full animate-pulse"></div>
+        <div>
+          <p class="font-bold text-lg">${produit.nom}</p>
+          <p class="text-sm opacity-90">${prixAffiche?.toLocaleString()} FCFA ajouté !</p>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 4000);
+}, [dispatch]);
 
   if (loading) {
     return (
